@@ -1,0 +1,10 @@
+all:
+  children:
+    akhq:
+      hosts:
+        uivpaap00000mzh:
+          ansible_host: 10.146.122.142
+          ansible_fqdn: uivpaap00000mzh.int.cm.par.emea.cib
+          ansible_user: root
+          ansible_ssh_private_key_file: /root/.ssh/id_rsa
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

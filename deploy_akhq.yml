@@ -1,0 +1,78 @@
+---
+- name: Deploy AKHQ
+  hosts: akhq
+  become: true
+  vars:
+    # Configuration
+    akhq_version: "0.25.1"
+    akhq_admin_passwd: "securepasswd"
+    akhq_install_dir: "/opt/akhq"
+    
+    # Configuration des serveurs Kafka bootstrap
+    kafka_bootstrap_servers:
+      - name: kafka-next-ncy
+        servers: "uivpaap00000mzb.int.cm.par.emea.cib:9093,uivpaap00000mzv.int.cm.par.emea.cib:9093,uivpaap00000mzg.int.cm.par.emea.cib:9093,uivpaap00000mzw.int.cm.par.emea.cib:9093"
+        properties:
+          security.protocol: SASL_SSL
+          sasl.mechanism: PLAIN
+          sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="client" password="D@ta!A_123456789";
+          ssl.truststore.location: /var/ssl/private/kafka_broker.truststore.jks
+          ssl.truststore.password: changeit
+    
+    # Activation des mC)triques Prometheus
+    akhq_prometheus_enable: true
+    akhq_prometheus_port: 9118
+
+  tasks:
+    # CrC)er rC)pertoire pour AKHQ
+    - name: Create installation directory
+      ansible.builtin.file:
+        path: "{{ akhq_install_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create configuration directory
+      ansible.builtin.file:
+        path: "/etc/akhq/"
+        state: directory
+        mode: '0755'
+    
+    # TC)lC)charger AKHQ (en supposant que nous puissions le faire depuis le serveur cible)
+    - name: Download AKHQ
+      ansible.builtin.get_url:
+        url: "https://github.com/tchiotludo/akhq/releases/download/{{ akhq_version }}/akhq.jar"
+        dest: "{{ akhq_install_dir }}/akhq.jar"
+        mode: '0755'
+      
+    # Convertir mot de passe en SHA256
+    - name: Convert password with sha256
+      ansible.builtin.shell: |
+        echo -n "{{ akhq_admin_passwd }}" | sha256sum
+      register: akhq_pwd
+      changed_when: false
+      
+    - name: Set password variable
+      ansible.builtin.set_fact:
+        akhq_pwd_256: "{{ akhq_pwd.stdout.split(' ')[0] }}"
+    
+    # CrC)er le fichier de configuration
+    - name: Create AKHQ configuration file
+      ansible.builtin.template:
+        src: "templates/akhq.yml.j2"
+        dest: "/etc/akhq/akhq.yml"
+        mode: '0644'
+      
+    # CrC)er le fichier service (modifiC) pour utiliser le JAR directement)
+    - name: Create systemd service file
+      ansible.builtin.template:
+        src: "templates/akhq.service.jar"
+        dest: "/lib/systemd/system/akhq.service"
+        mode: '0644'
+      
+    # DC)marrer le service
+    - name: Start AKHQ service
+      ansible.builtin.systemd:
+        name: akhq
+        state: started
+        enabled: true
+        daemon_reload: true
