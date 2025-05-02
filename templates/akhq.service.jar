@@ -3,7 +3,7 @@ Description=AKHQ Kafka Management UI
 
 [Service]
 WorkingDirectory={{ akhq_install_dir }}
-ExecStart={{ akhq_install_dir }}/bin/akhq -Dmicronaut.config.files=/etc/akhq/akhq.yml
+ExecStart=/usr/bin/java -Dmicronaut.config.files=/etc/akhq/akhq.yml -jar {{ akhq_install_dir }}/akhq.jar
 Type=simple
 Restart=on-failure
 RestartSec=10

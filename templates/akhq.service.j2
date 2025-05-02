@@ -1,0 +1,14 @@
+[Unit]
+Description=AKHQ - Interface graphique pour Kafka
+After=network.target
+
+[Service]
+WorkingDirectory={{ akhq_install_dir }}
+ExecStart={{ java_bin }} -Dmicronaut.config.files=/etc/akhq/application.yml -jar {{ akhq_install_dir }}/akhq.jar
+Type=simple
+Restart=on-failure
+RestartSec=10
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target

@@ -11,54 +11,34 @@ akhq:
     {{ cluster.name }}:
       properties:
         bootstrap.servers: "{{ cluster.servers }}"
+{% if cluster.properties is defined %}
+{% for key, value in cluster.properties.items() %}
+        {{ key }}: "{{ value }}"
 {% endfor %}
+{% endif %}
       ui-options:
         topic:
           default-view: ALL  # (ALL, HIDE_INTERNAL, HIDE_INTERNAL_STREAM, HIDE_STREAM)
-          skip-consumer-groups: false # Skip loading consumer group information when showing topics. Overrides default
-          skip-last-record: true  # Skip loading last record date information when showing topics.  Overrides default
+          skip-consumer-groups: false # Ignorer le chargement des informations des groupes de consommateurs
+          skip-last-record: true  # Ignorer le chargement des dates des derniers enregistrements
         topic-data:
           sort: NEWEST # (OLDEST, NEWEST)
+{% endfor %}
 
   security:
     default-group: no-roles                                                                                                                                                                                                                   
     basic-auth:
       - username: admin
-        password: "{{ akhq_pwd_256 }}" # Password in sha256sum
+        password: "{{ akhq_pwd_256 }}" # Mot de passe en sha256sum
         groups:
           - admin
-{% if akhq_ldap_auth != "" %}
-    ldap:
-      groups:
-        {{ akhq_ldap_auth|indent(8) }}
-{% endif %}
 
 micronaut:
   security:
     enabled: true
-{% if akhq_ldap_enable %}
-    ldap:
-      default:
-        enabled: true
-        context:
-          server: '{{ akhq_ldap_server }}'
-          managerDn: '{{ akhq_ldap_bindn }}'
-          managerPassword: '{{ akhq_ldap_bindpwd }}'
-        search:
-          base: "{{ akhq_ldap_search_base }}"
-          attributes:
-            - "{{ akhq_ldap_search_attribute | default('cn') }}"
-        groups:
-          enabled: {{ akhq_ldap_group_enable | lower}}
-{% if akhq_ldap_group_filter != "" %}
-          filter: "{{ akhq_ldap_group_filter }}"
-{% endif %}
-          base: "{{ akhq_ldap_group_base }}"
-{% endif %}
-
 
 {% if akhq_prometheus_enable %}
-#Prometheus metrics
+# MC)triques Prometheus
 endpoints:
   all:
     port: {{ akhq_prometheus_port }}
@@ -69,3 +49,4 @@ endpoints:
   loggers:
     write-sensitive: false
 {% endif %}
+
